@@ -1,6 +1,7 @@
 movie-app/
 ├── index.html              # Main HTML for the app interface
 ├── profile.html            # New HTML file for user profile
+├── dashboard.html          # New HTML file for dashboard
 ├── style.css               # CSS for styling the app
 ├── script.js               # Front-end JavaScript logic
 ├── server.js               # Node.js server for API proxy and auth
