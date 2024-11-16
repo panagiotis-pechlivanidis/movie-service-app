@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Search</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    /* Search Bar */
+    .search-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      padding: 10px;
+    }
+
+    #searchInput {
+      width: 300px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    #searchButton {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: white;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #searchButton:hover {
+      background-color: #45a049;
+    }
+
+    /* Movie Cards */
+    #movieInfo {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .movie-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 300px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .movie-poster {
+      width: 100%;
+      height: auto;
+    }
+
+    .movie-details {
+      padding: 15px;
+    }
+
+    .movie-details h3 {
+      margin: 0;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .movie-details p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .movie-details p strong {
+      color: #333;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      #searchInput {
+        width: 200px;
+      }
+
+      .movie-card {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Movie Search</h1>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Enter movie title">
+    <button id="searchButton">Search</button>
+  </div>
+
+  <div id="movieInfo">
+    <!-- Movie Cards will be dynamically added here -->
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchButton = document.getElementById("searchButton");
+      const searchInput = document.getElementById("searchInput");
+      const movieInfo = document.getElementById("movieInfo");
+
+      // Event listener for the search button
+      searchButton.addEventListener("click", async () => {
+        const title = searchInput.value.trim(); // Get the input value
+
+        if (!title) {
+          alert("Please enter a movie title.");
+          return;
+        }
+
+        try {
+          // Send a request to the server to get an array of movies
+          const response = await fetch(`/api/movies?title=${encodeURIComponent(title)}`);
+
+          if (!response.ok) {
+            throw new Error(`Error fetching movies: ${response.statusText}`);
+          }
+
+          const movies = await response.json(); // Parse the response JSON
+          console.log("Received movies:", movies); // Debug: Log received movies
+
+          // Clear previous movie info
+          movieInfo.innerHTML = "";
+
+          if (movies.length === 0) {
+            movieInfo.innerHTML = "<p>No movies found.</p>";
+          } else {
+            // Display movie details
+            movies.forEach((movie) => {
+              const movieCard = document.createElement("div");
+              movieCard.className = "movie-card";
+
+              const moviePoster = document.createElement("img");
+              moviePoster.className = "movie-poster";
+              moviePoster.src = movie.poster || "https://via.placeholder.com/150";
+              moviePoster.alt = `${movie.title} Poster`;
+
+              const movieDetails = document.createElement("div");
+              movieDetails.className = "movie-details";
+
+              movieDetails.innerHTML = `
+                <h3>${movie.title}</h3>
+                <p>${movie.plot || "No plot available."}</p>
+                <p><strong>Genres:</strong> ${movie.genres || "Unknown"}</p>
+                <p><strong>Release Year:</strong> ${movie.year || "Unknown"}</p>
+              `;
+              console.log("Movie details:", movieDetails.innerHTML); // Debug: Log movie details HTML
+
+              movieCard.appendChild(moviePoster);
+              movieCard.appendChild(movieDetails);
+              movieInfo.appendChild(movieCard);
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching movies:", error);
+          alert("Failed to fetch movie information. Please try again later.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
