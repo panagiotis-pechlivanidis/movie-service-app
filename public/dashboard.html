@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Search</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    /* Search Bar */
+    .search-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      padding: 10px;
+    }
+
+    #searchInput {
+      width: 300px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    #searchButton {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: white;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #searchButton:hover {
+      background-color: #45a049;
+    }
+
+    /* Movie Cards */
+    #movieInfo {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .movie-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 300px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .movie-poster {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+    }
+
+    .movie-details {
+      padding: 15px;
+    }
+
+    .movie-details h3 {
+      margin: 0;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .movie-details p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .movie-details p strong {
+      color: #333;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      #searchInput {
+        width: 200px;
+      }
+
+      .movie-card {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Movie Search</h1>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Enter movie title">
+    <button id="searchButton">Search</button>
+  </div>
+
+  <div id="movieInfo">
+    <!-- Movie Cards will be dynamically added here -->
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchButton = document.getElementById("searchButton");
+      const searchInput = document.getElementById("searchInput");
+      const movieInfo = document.getElementById("movieInfo");
+
+      // Event listener for the search button
+      searchButton.addEventListener("click", async () => {
+        const title = searchInput.value.trim(); // Get the input value
+
+        if (!title) {
+          alert("Please enter a movie title.");
+          return;
+        }
+
+        try {
+          console.log('Searching with title:', title);  // Add detailed logging
+          // Send a request to the server to get an array of movies
+          const response = await fetch(`/api/movies?query=${encodeURIComponent(title)}`);
+
+          console.log('Response status:', response.status);  // Log response status
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));  // Log response headers
+
+          if (!response.ok) {
+            const errorText = await response.text();  // Get error text
+            console.error('Error response text:', errorText);
+            throw new Error(`Error fetching movies: ${response.statusText} (${errorText})`);
+          }
+
+          const movies = await response.json(); // Parse the response JSON
+          console.log("Received movies:", movies); // Debug: Log received movies
+
+          // Clear previous movie info
+          movieInfo.innerHTML = "";
+
+          if (movies.count === 0) {
+            movieInfo.innerHTML = `<p>No movies found.</p>`;
+          } else {
+            // Use movies.movies array instead of movies directly
+            movies.movies.forEach((movie) => {
+              const movieCard = document.createElement("div");
+              movieCard.className = "movie-card";
+
+              const moviePoster = document.createElement("img");
+              moviePoster.className = "movie-poster";
+              moviePoster.src = movie.poster || "https://via.placeholder.com/300x450?text=No+Poster";
+              moviePoster.alt = `${movie.title} Poster`;
+
+              const movieDetails = document.createElement("div");
+              movieDetails.className = "movie-details";
+
+              // For OMDB search results, we'll use slightly different details
+              movieDetails.innerHTML = `
+                <h3>${movie.title}</h3>
+                <p><strong>Year:</strong> ${movie.year || 'Unknown'}</p>
+                <p><strong>Type:</strong> ${movie.type || 'Unknown'}</p>
+                <button onclick="showMovieDetails('${movie.id}')">View Details</button>
+              `;
+
+              movieCard.appendChild(moviePoster);
+              movieCard.appendChild(movieDetails);
+              movieInfo.appendChild(movieCard);
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching movies:", error);
+          alert("Failed to fetch movie information. Please try again later.");
+        }
+      });
+
+      // Function to show detailed movie information
+      window.showMovieDetails = async (movieId) => {
+        try {
+          const response = await fetch(`/api/movies/details?id=${movieId}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch movie details');
+          }
+
+          const movie = await response.json();
+          
+          // Create a modal or overlay to show detailed information
+          const detailsModal = document.createElement('div');
+          detailsModal.style.position = 'fixed';
+          detailsModal.style.top = '0';
+          detailsModal.style.left = '0';
+          detailsModal.style.width = '100%';
+          detailsModal.style.height = '100%';
+          detailsModal.style.backgroundColor = 'rgba(0,0,0,0.8)';
+          detailsModal.style.display = 'flex';
+          detailsModal.style.justifyContent = 'center';
+          detailsModal.style.alignItems = 'center';
+          detailsModal.style.zIndex = '1000';
+
+          detailsModal.innerHTML = `
+            <div style="background-color: white; padding: 20px; border-radius: 10px; max-width: 600px; width: 90%;">
+              <h2>${movie.title}</h2>
+              <img src="${movie.poster}" alt="${movie.title} Poster" style="max-width: 100%; height: auto;">
+              <p><strong>Year:</strong> ${movie.year}</p>
+              <p><strong>Rated:</strong> ${movie.rated}</p>
+              <p><strong>Released:</strong> ${movie.released}</p>
+              <p><strong>Runtime:</strong> ${movie.runtime}</p>
+              <p><strong>Genres:</strong> ${movie.genres.join(', ')}</p>
+              <p><strong>Director:</strong> ${movie.director}</p>
+              <p><strong>Actors:</strong> ${movie.actors.join(', ')}</p>
+              <p><strong>Plot:</strong> ${movie.plot}</p>
+              <p><strong>IMDb Rating:</strong> ${movie.imdbRating}</p>
+              <button onclick="this.parentElement.parentElement.remove()">Close</button>
+            </div>
+          `;
+
+          document.body.appendChild(detailsModal);
+          detailsModal.addEventListener('click', (e) => {
+            if (e.target === detailsModal) {
+              detailsModal.remove();
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching movie details:", error);
+          alert("Failed to fetch movie details. Please try again later.");
+        }
+      };
+    });
+  </script>
+</body>
+</html>
